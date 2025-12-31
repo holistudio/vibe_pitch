@@ -2,14 +2,17 @@
 
 Vibecoding a singing pitch webapp
 
-A simple web app that helps you practice singing specific musical notes. Select a target pitch, sing into your microphone, and get real-time visual feedback showing whether you're on pitch, too high, or too low.
+A web app that helps you practice singing melodic patterns. Configure a 4-note melody using scale degrees, listen to it played back as piano tones, then sing it back and get visual feedback on your pitch accuracy for each note.
 
 ## Features
 
-- Select any note from C2 to C6 (covers most vocal ranges)
-- Real-time pitch detection using your microphone
-- Visual feedback with a horizontal line:
-  - **Green (middle)** = on pitch
+- **Melody Configuration**: Set up 4 notes using scale degrees (1-7) with optional sharps and octave shifts
+- **Piano Playback**: Hear your melody played with realistic piano-like tones
+- **Adjustable Tempo**: Set the metronome speed (BPM) for eighth notes
+- **Countdown Timer**: 3-2-1 countdown at tempo before recording starts
+- **Real-time Pitch Detection**: Uses your microphone to detect the pitch you're singing
+- **Visual Feedback**: 4-column display shows your accuracy for each note
+  - **Green (center)** = on pitch
   - **Red (moves up)** = too high
   - **Blue (moves down)** = too low
 
@@ -17,7 +20,7 @@ A simple web app that helps you practice singing specific musical notes. Select 
 
 - A modern web browser (Chrome, Firefox, Edge, or Safari)
 - A microphone
-- A local web server (see instructions below)
+- A local web server (see setup instructions below)
 
 **Note:** Due to browser security restrictions, the microphone will only work when the page is served from `localhost` or `https://`. Opening the HTML file directly (`file://`) will not work.
 
@@ -34,7 +37,7 @@ cd vibe_pitch
 
 ### Step 2: Start a Local Web Server
 
-Choose ONE of the following options based on what you have installed or prefer to install:
+Choose ONE of the following options:
 
 ---
 
@@ -70,25 +73,7 @@ Then open the URL shown (usually http://localhost:3000)
 
 ---
 
-#### Option C: Using PHP (if installed)
-
-**Mac/Linux:**
-
-```bash
-php -S localhost:8000
-```
-
-**Windows:**
-
-```cmd
-php -S localhost:8000
-```
-
-Then open: http://localhost:8000
-
----
-
-#### Option D: Using VS Code Live Server Extension
+#### Option C: Using VS Code Live Server Extension
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/)
 2. Install the "Live Server" extension by Ritwick Dey
@@ -97,29 +82,58 @@ Then open: http://localhost:8000
 
 ---
 
-#### Option E: Using browser extensions
-
-**Chrome:**
-1. Install "Web Server for Chrome" from the Chrome Web Store
-2. Launch the app, select the `vibe_pitch` folder
-3. Click the server URL to open
-
----
-
 ### Step 3: Allow Microphone Access
 
-When you click "Start" in the app, your browser will ask for permission to use your microphone. Click "Allow" to enable pitch detection.
+When you click "Start Singing", your browser will ask for permission to use your microphone. Click "Allow" to enable pitch detection.
 
 ## Usage
 
-1. Select a target note from the dropdown (default is A3)
-2. Click "Start"
-3. Allow microphone access when prompted
-4. Sing the note and watch the line move:
-   - Aim to keep the line green and centered
-   - If the line goes up and turns red, you're singing too high
-   - If the line goes down and turns blue, you're singing too low
-5. Click "Stop" when done
+### 1. Configure Your Melody
+
+**Root Note (1):** Select the root note of your scale from the dropdown (e.g., C4). This becomes scale degree "1".
+
+**Tempo (BPM):** Set the metronome speed. This controls how fast the notes play and how long you have to sing each note.
+
+**Note Cards:** Configure each of the 4 notes:
+- **Number (1-7):** The scale degree in a major scale
+  - 1 = root
+  - 2 = major 2nd
+  - 3 = major 3rd
+  - 4 = perfect 4th
+  - 5 = perfect 5th
+  - 6 = major 6th
+  - 7 = major 7th
+- **# (sharp):** Click to raise the note by one semitone
+- **-8va:** Check to lower the note by one octave
+- **+8va:** Check to raise the note by one octave
+
+### 2. Listen to the Melody
+
+Click **"Play Melody"** to hear your 4-note pattern played as piano tones. Listen carefully to memorize the pitches.
+
+### 3. Sing the Melody
+
+Click **"Start Singing"** to begin:
+1. A **3-2-1 countdown** will appear (at your tempo speed)
+2. Sing each note when its column highlights
+3. The status bar shows which note you should be singing
+
+### 4. Review Your Results
+
+After all 4 notes, each column displays your average pitch accuracy:
+- **Green line in center:** You sang the note accurately
+- **Red line moved up:** You sang too high (sharp)
+- **Blue line moved down:** You sang too low (flat)
+- **Gray line:** No pitch was detected (sing louder!)
+
+### Example Melodies to Try
+
+| Pattern | Notes | Description |
+|---------|-------|-------------|
+| Major Arpeggio | 1, 3, 5, 8 | Classic major chord |
+| Minor Feel | 1, 3#, 5, 7 | With raised 3rd |
+| Octave Jump | 1, 5, 1 +8va, 5 | Practice octave leaps |
+| Descending | 5, 3, 2, 1 | Coming back down |
 
 ## Troubleshooting
 
@@ -132,6 +146,11 @@ When you click "Start" in the app, your browser will ask for permission to use y
 - Sing louder or move closer to the microphone
 - Make sure your microphone is not muted
 - Check your system audio input settings
+- Try a slower tempo to give yourself more time per note
+
+**Notes sound wrong:**
+- Verify your root note selection matches your vocal range
+- Check that you haven't accidentally enabled sharps or octave shifts
 
 **Page not loading:**
 - Ensure the local server is running
