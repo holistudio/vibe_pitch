@@ -4,6 +4,8 @@ Vibecoding a singing pitch webapp
 
 A web app that helps you practice singing melodic patterns. Configure a 4-note melody using scale degrees, listen to it played back as piano tones, then sing it back and get visual feedback on your pitch accuracy for each note.
 
+<img src="screenshot.png">
+
 ## Features
 
 - **Melody Configuration**: Set up 4 notes using scale degrees (1-7) with optional sharps and octave shifts
@@ -15,6 +17,55 @@ A web app that helps you practice singing melodic patterns. Configure a 4-note m
   - **Green (center)** = on pitch
   - **Red (moves up)** = too high
   - **Blue (moves down)** = too low
+
+## Usage
+
+### 1. Configure Your Melody
+
+**Root Note (1):** Select the root note of your scale from the dropdown (e.g., C4). This becomes scale degree "1".
+
+**Tempo (BPM):** Set the metronome speed. This controls how fast the notes play and how long you have to sing each note.
+
+**Note Cards:** Configure each of the 4 notes:
+- **Number (1-7):** The scale degree in a major scale
+  - 1 = root
+  - 2 = major 2nd
+  - 3 = major 3rd
+  - 4 = perfect 4th
+  - 5 = perfect 5th
+  - 6 = major 6th
+  - 7 = major 7th
+- **# (sharp):** Click to raise the note by one semitone
+- **-8va:** Check to lower the note by one octave
+- **+8va:** Check to raise the note by one octave
+
+### 2. Listen to the Melody
+
+Click **"Play Melody"** to hear your 4-note pattern played as piano tones. Listen carefully to memorize the pitches.
+
+### 3. Sing the Melody
+
+Click **"Start Singing"** to begin:
+1. A **3-2-1 countdown** will appear (at your tempo speed)
+2. Sing each note when its column highlights
+3. The status bar shows which note you should be singing
+
+### 4. Review Your Results
+
+After all 4 notes, each column displays your average pitch accuracy:
+- **Green line in center:** You sang the note accurately
+- **Red line moved up:** You sang too high (sharp)
+- **Blue line moved down:** You sang too low (flat)
+- **Gray line:** No pitch was detected (sing louder!)
+
+### Example Melodies to Try
+
+| Pattern | Notes | Description |
+|---------|-------|-------------|
+| Major Arpeggio | 1, 3, 5, 8 | Classic major chord |
+| Minor Feel | 1, 3#, 5, 7 | With raised 3rd |
+| Octave Jump | 1, 5, 1 +8va, 5 | Practice octave leaps |
+| Descending | 5, 3, 2, 1 | Coming back down |
 
 ## Requirements
 
@@ -85,55 +136,6 @@ Then open the URL shown (usually http://localhost:3000)
 ### Step 3: Allow Microphone Access
 
 When you click "Start Singing", your browser will ask for permission to use your microphone. Click "Allow" to enable pitch detection.
-
-## Usage
-
-### 1. Configure Your Melody
-
-**Root Note (1):** Select the root note of your scale from the dropdown (e.g., C4). This becomes scale degree "1".
-
-**Tempo (BPM):** Set the metronome speed. This controls how fast the notes play and how long you have to sing each note.
-
-**Note Cards:** Configure each of the 4 notes:
-- **Number (1-7):** The scale degree in a major scale
-  - 1 = root
-  - 2 = major 2nd
-  - 3 = major 3rd
-  - 4 = perfect 4th
-  - 5 = perfect 5th
-  - 6 = major 6th
-  - 7 = major 7th
-- **# (sharp):** Click to raise the note by one semitone
-- **-8va:** Check to lower the note by one octave
-- **+8va:** Check to raise the note by one octave
-
-### 2. Listen to the Melody
-
-Click **"Play Melody"** to hear your 4-note pattern played as piano tones. Listen carefully to memorize the pitches.
-
-### 3. Sing the Melody
-
-Click **"Start Singing"** to begin:
-1. A **3-2-1 countdown** will appear (at your tempo speed)
-2. Sing each note when its column highlights
-3. The status bar shows which note you should be singing
-
-### 4. Review Your Results
-
-After all 4 notes, each column displays your average pitch accuracy:
-- **Green line in center:** You sang the note accurately
-- **Red line moved up:** You sang too high (sharp)
-- **Blue line moved down:** You sang too low (flat)
-- **Gray line:** No pitch was detected (sing louder!)
-
-### Example Melodies to Try
-
-| Pattern | Notes | Description |
-|---------|-------|-------------|
-| Major Arpeggio | 1, 3, 5, 8 | Classic major chord |
-| Minor Feel | 1, 3#, 5, 7 | With raised 3rd |
-| Octave Jump | 1, 5, 1 +8va, 5 | Practice octave leaps |
-| Descending | 5, 3, 2, 1 | Coming back down |
 
 ## Troubleshooting
 
