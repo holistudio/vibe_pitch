@@ -7,12 +7,13 @@ let isListening = false;
 let targetFrequency = null;
 let animationId = null;
 
-const BUFFER_SIZE = 2048;
+const BUFFER_SIZE = 4096; // Larger buffer for better frequency resolution
 
 // DOM elements
 let noteSelect, startButton, stopButton, statusText;
 let targetDisplay, detectedDisplay, centsDisplay;
 let pitchLine;
+let spectrumCanvas, spectrumCtx;
 
 /**
  * Initialize the application
@@ -27,6 +28,12 @@ function init() {
     detectedDisplay = document.getElementById('detected-display');
     centsDisplay = document.getElementById('cents-display');
     pitchLine = document.getElementById('pitch-line');
+    spectrumCanvas = document.getElementById('spectrum-canvas');
+    spectrumCtx = spectrumCanvas.getContext('2d');
+
+    // Set up canvas sizing
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
     // Populate note selector
     populateNoteSelector();
@@ -146,6 +153,7 @@ function stopListening() {
     detectedDisplay.textContent = 'Detected: --';
     centsDisplay.textContent = '-- cents';
     resetPitchLine();
+    clearSpectrum();
 }
 
 /**
@@ -162,6 +170,9 @@ function resetPitchLine() {
 function analyze() {
     if (!isListening) return;
 
+    // Draw the frequency spectrum
+    drawSpectrum();
+
     const buffer = new Float32Array(BUFFER_SIZE);
     analyser.getFloatTimeDomainData(buffer);
 
@@ -176,8 +187,8 @@ function analyze() {
         const cents = centsDifference(detectedFreq, targetFrequency);
         centsDisplay.textContent = `${cents >= 0 ? '+' : ''}${cents.toFixed(0)} cents`;
 
-        // Update the pitch line
-        updatePitchLine(cents);
+        // Update the pitch line based on detected frequency
+        updatePitchLine(detectedFreq);
     } else {
         detectedDisplay.textContent = 'Detected: (no pitch)';
         centsDisplay.textContent = '-- cents';
@@ -193,16 +204,25 @@ function analyze() {
  * - Too high: moves up, red
  * - Too low: moves down, blue
  */
-function updatePitchLine(cents) {
+function updatePitchLine(detectedFreq) {
+    const { minFreq, maxFreq } = getFrequencyRange();
+
+    // Calculate cents difference for color
+    const cents = centsDifference(detectedFreq, targetFrequency);
     const threshold = 10; // Within 10 cents is considered "on pitch"
 
-    // Clamp cents to a reasonable range for visualization (-100 to +100)
-    const clampedCents = Math.max(-100, Math.min(100, cents));
+    // Clamp frequency to display range
+    const clampedFreq = Math.max(minFreq, Math.min(maxFreq, detectedFreq));
 
-    // Calculate vertical position
-    // 50% = middle, higher pitch = lower percentage (moves up), lower pitch = higher percentage (moves down)
-    // Map -100 cents to 80%, 0 cents to 50%, +100 cents to 20%
-    const percentage = 50 - (clampedCents * 0.3);
+    // Use same logarithmic scale as spectrum for consistent positioning
+    const logMin = Math.log2(minFreq);
+    const logMax = Math.log2(maxFreq);
+    const logFreq = Math.log2(clampedFreq);
+
+    // Calculate percentage (higher freq = lower percentage = higher on screen)
+    const normalized = (logFreq - logMin) / (logMax - logMin);
+    const percentage = (1 - normalized) * 100;
+
     pitchLine.style.top = `${percentage}%`;
 
     // Set color based on pitch accuracy
@@ -215,6 +235,94 @@ function updatePitchLine(cents) {
     } else {
         // Too low - blue
         pitchLine.style.backgroundColor = '#3b82f6';
+    }
+}
+
+/**
+ * Resize canvas to match its container
+ */
+function resizeCanvas() {
+    const container = spectrumCanvas.parentElement;
+    spectrumCanvas.width = container.clientWidth;
+    spectrumCanvas.height = container.clientHeight;
+}
+
+/**
+ * Get frequency range to display based on target frequency
+ * Shows approximately 2 octaves centered around the target
+ */
+function getFrequencyRange() {
+    // Show from 1 octave below to 1 octave above target
+    const minFreq = targetFrequency / 2;
+    const maxFreq = targetFrequency * 2;
+    return { minFreq, maxFreq };
+}
+
+/**
+ * Convert frequency to Y position on canvas
+ */
+function frequencyToY(freq, minFreq, maxFreq, canvasHeight) {
+    // Use logarithmic scale for frequency (more natural for music)
+    const logMin = Math.log2(minFreq);
+    const logMax = Math.log2(maxFreq);
+    const logFreq = Math.log2(freq);
+
+    // Higher frequencies at top (lower Y), lower frequencies at bottom (higher Y)
+    const normalized = (logFreq - logMin) / (logMax - logMin);
+    return canvasHeight * (1 - normalized);
+}
+
+/**
+ * Draw the frequency spectrum
+ */
+function drawSpectrum() {
+    if (!analyser || !spectrumCtx) return;
+
+    const frequencyData = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(frequencyData);
+
+    const width = spectrumCanvas.width;
+    const height = spectrumCanvas.height;
+    const sampleRate = audioContext.sampleRate;
+    const binCount = analyser.frequencyBinCount;
+    const freqPerBin = sampleRate / (binCount * 2);
+
+    // Clear canvas
+    spectrumCtx.clearRect(0, 0, width, height);
+
+    // Get frequency range based on target pitch
+    const { minFreq, maxFreq } = getFrequencyRange();
+
+    // Find which bins correspond to our frequency range
+    const minBin = Math.floor(minFreq / freqPerBin);
+    const maxBin = Math.ceil(maxFreq / freqPerBin);
+
+    // Draw spectrum bars (horizontal bars at each frequency)
+    spectrumCtx.fillStyle = 'rgba(0, 0, 0, 0.1)'; // 10% black
+
+    for (let bin = minBin; bin <= maxBin && bin < binCount; bin++) {
+        const freq = bin * freqPerBin;
+        const amplitude = frequencyData[bin] / 255; // Normalize to 0-1
+
+        // Calculate Y position for this frequency
+        const y = frequencyToY(freq, minFreq, maxFreq, height);
+
+        // Bar width based on amplitude (extends from left edge)
+        const barWidth = amplitude * width;
+
+        // Bar height - make it thin for a smooth spectrum look
+        const barHeight = Math.max(2, height / (maxBin - minBin));
+
+        spectrumCtx.fillRect(0, y - barHeight / 2, barWidth, barHeight);
+    }
+}
+
+/**
+ * Clear the spectrum canvas
+ */
+function clearSpectrum() {
+    if (spectrumCtx) {
+        spectrumCtx.clearRect(0, 0, spectrumCanvas.width, spectrumCanvas.height);
     }
 }
 
