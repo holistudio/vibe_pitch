@@ -1,0 +1,146 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: white;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Controls panel at the top */
+.controls {
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    justify-content: center;
+}
+
+.controls label {
+    font-weight: 500;
+    color: #333;
+}
+
+.controls select {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    cursor: pointer;
+}
+
+.controls button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+#start-btn {
+    background-color: #22c55e;
+    color: white;
+}
+
+#start-btn:hover:not(:disabled) {
+    background-color: #16a34a;
+}
+
+#stop-btn {
+    background-color: #ef4444;
+    color: white;
+}
+
+#stop-btn:hover:not(:disabled) {
+    background-color: #dc2626;
+}
+
+/* Info display */
+.info {
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    font-size: 14px;
+    color: #555;
+}
+
+.info span {
+    padding: 5px 10px;
+    background-color: white;
+    border-radius: 4px;
+    border: 1px solid #e9ecef;
+}
+
+#status {
+    color: #666;
+    font-style: italic;
+}
+
+/* Main visualization area */
+.visualization {
+    flex: 1;
+    position: relative;
+    background-color: white;
+    min-height: 400px;
+}
+
+/* Center reference line (shows where "on pitch" is) */
+.center-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background-color: #e0e0e0;
+    transform: translateY(-50%);
+}
+
+/* The moving pitch indicator line */
+#pitch-line {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 8px;
+    background-color: #ccc;
+    transform: translateY(-50%);
+    transition: top 0.05s ease-out, background-color 0.1s ease;
+}
+
+/* Labels for high/low */
+.label-high {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #999;
+    font-size: 14px;
+}
+
+.label-low {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #999;
+    font-size: 14px;
+}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitch Trainer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="controls">
+        <label for="note-select">Select Target Pitch:</label>
+        <select id="note-select"></select>
+        <button id="start-btn">Start</button>
+        <button id="stop-btn" disabled>Stop</button>
+    </div>
+
+    <div class="info">
+        <span id="target-display">Target: --</span>
+        <span id="detected-display">Detected: --</span>
+        <span id="cents-display">-- cents</span>
+        <span id="status">Select a note and click Start</span>
+    </div>
+
+    <div class="visualization">
+        <div class="label-high">Too High (sharp)</div>
+        <div class="center-line"></div>
+        <div id="pitch-line"></div>
+        <div class="label-low">Too Low (flat)</div>
+    </div>
+
+    <script src="pitch.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
