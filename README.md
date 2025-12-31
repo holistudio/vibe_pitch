@@ -18,6 +18,17 @@ Pick a note, sing into your mic, and watch the line tell you the truth!
   - 🔵 **Blue (moves down)** = Too low, reach for it!
 - **Play the target note** — Hear what you're aiming for with piano-like tones
 
+## How to Use 🎵
+
+1. **Pick your note** from the dropdown
+2. **Click "Play Tone"** to hear the target pitch (optional but helpful!)
+3. **Click "Start"** and allow microphone access
+4. **Sing!** Watch the line:
+   - Keep it green and centered = you're on pitch
+   - Line going up + red = you're sharp, come down a bit
+   - Line going down + blue = you're flat, push it higher
+5. **Click "Stop"** when you're done
+
 ## Requirements
 
 - A modern web browser (Chrome, Firefox, Edge, or Safari)
@@ -85,17 +96,6 @@ Then open the URL shown (usually http://localhost:3000)
 ### Step 3: Allow Microphone Access
 
 When you click "Start", your browser will ask for mic permission. Click "Allow" and you're good to go!
-
-## How to Use 🎵
-
-1. **Pick your note** from the dropdown
-2. **Click "Play Tone"** to hear the target pitch (optional but helpful!)
-3. **Click "Start"** and allow microphone access
-4. **Sing!** Watch the line:
-   - Keep it green and centered = you're on pitch
-   - Line going up + red = you're sharp, come down a bit
-   - Line going down + blue = you're flat, push it higher
-5. **Click "Stop"** when you're done
 
 ## Troubleshooting 🔧
 
