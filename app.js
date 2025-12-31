@@ -4,50 +4,114 @@ let audioContext = null;
 let analyser = null;
 let microphone = null;
 let isListening = false;
-let targetFrequency = null;
 let animationId = null;
+
+// Tone playback
 let toneContext = null;
 let toneOscillators = [];
 let toneGain = null;
 let toneTimeout = null;
 let isPlayingTone = false;
 
+// Recording state
+let currentNoteIndex = 0;
+let noteStartTime = 0;
+let notePitchSamples = [[], [], [], []];
+let recordingTimeout = null;
+
 const BUFFER_SIZE = 2048;
-const TONE_DURATION = 3000; // 3 seconds
 
 // DOM elements
-let noteSelect, startButton, stopButton, playButton, statusText;
-let targetDisplay, detectedDisplay, centsDisplay;
-let pitchLine;
+let rootNoteSelect, tempoInput;
+let degreeInputs, sharpChecks, octUpChecks, octDownChecks;
+let playButton, startButton, stopButton, statusText;
+let pitchLines, noteLabels, noteColumns;
 
 /**
  * Initialize the application
  */
 function init() {
     // Get DOM elements
-    noteSelect = document.getElementById('note-select');
+    rootNoteSelect = document.getElementById('root-note');
+    tempoInput = document.getElementById('tempo');
+
+    degreeInputs = [
+        document.getElementById('degree-0'),
+        document.getElementById('degree-1'),
+        document.getElementById('degree-2'),
+        document.getElementById('degree-3')
+    ];
+    sharpChecks = [
+        document.getElementById('sharp-0'),
+        document.getElementById('sharp-1'),
+        document.getElementById('sharp-2'),
+        document.getElementById('sharp-3')
+    ];
+    octUpChecks = [
+        document.getElementById('oct-up-0'),
+        document.getElementById('oct-up-1'),
+        document.getElementById('oct-up-2'),
+        document.getElementById('oct-up-3')
+    ];
+    octDownChecks = [
+        document.getElementById('oct-down-0'),
+        document.getElementById('oct-down-1'),
+        document.getElementById('oct-down-2'),
+        document.getElementById('oct-down-3')
+    ];
+
+    playButton = document.getElementById('play-btn');
     startButton = document.getElementById('start-btn');
     stopButton = document.getElementById('stop-btn');
     statusText = document.getElementById('status');
-    targetDisplay = document.getElementById('target-display');
-    detectedDisplay = document.getElementById('detected-display');
-    centsDisplay = document.getElementById('cents-display');
-    pitchLine = document.getElementById('pitch-line');
 
-    // Populate note selector
+    pitchLines = [
+        document.getElementById('pitch-0'),
+        document.getElementById('pitch-1'),
+        document.getElementById('pitch-2'),
+        document.getElementById('pitch-3')
+    ];
+    noteLabels = [
+        document.getElementById('label-0'),
+        document.getElementById('label-1'),
+        document.getElementById('label-2'),
+        document.getElementById('label-3')
+    ];
+    noteColumns = [
+        document.getElementById('col-0'),
+        document.getElementById('col-1'),
+        document.getElementById('col-2'),
+        document.getElementById('col-3')
+    ];
+
+    // Populate root note selector
     populateNoteSelector();
 
-    // Get play button
-    playButton = document.getElementById('play-btn');
-
     // Event listeners
-    startButton.addEventListener('click', startListening);
-    stopButton.addEventListener('click', stopListening);
-    playButton.addEventListener('click', playTone);
-    noteSelect.addEventListener('change', updateTargetNote);
+    playButton.addEventListener('click', playMelody);
+    startButton.addEventListener('click', startRecording);
+    stopButton.addEventListener('click', stopRecording);
 
-    // Set initial target
-    updateTargetNote();
+    // Update labels when inputs change
+    for (let i = 0; i < 4; i++) {
+        degreeInputs[i].addEventListener('change', updateNoteLabels);
+        sharpChecks[i].addEventListener('change', updateNoteLabels);
+        octUpChecks[i].addEventListener('change', (e) => {
+            // Make octave checkboxes mutually exclusive
+            if (e.target.checked) {
+                octDownChecks[i].checked = false;
+            }
+            updateNoteLabels();
+        });
+        octDownChecks[i].addEventListener('change', (e) => {
+            if (e.target.checked) {
+                octUpChecks[i].checked = false;
+            }
+            updateNoteLabels();
+        });
+    }
+
+    updateNoteLabels();
 
     // Check for browser support
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -57,186 +121,202 @@ function init() {
 }
 
 /**
- * Populate the note selector dropdown
+ * Populate the root note selector dropdown
  */
 function populateNoteSelector() {
     const notes = getAvailableNotes();
-    noteSelect.innerHTML = '';
+    rootNoteSelect.innerHTML = '';
 
     notes.forEach(note => {
         const option = document.createElement('option');
         option.value = note.name;
         option.textContent = `${note.name} (${note.frequency.toFixed(1)} Hz)`;
-        // Default to A3 (comfortable for most voices)
-        if (note.name === 'A3') {
+        if (note.name === 'C4') {
             option.selected = true;
         }
-        noteSelect.appendChild(option);
+        rootNoteSelect.appendChild(option);
     });
 }
 
 /**
- * Update the target note when selection changes
+ * Update the note labels in the visualization
  */
-function updateTargetNote() {
-    const noteName = noteSelect.value;
-    targetFrequency = noteToFrequency(noteName);
-    targetDisplay.textContent = `Target: ${noteName} (${targetFrequency.toFixed(1)} Hz)`;
+function updateNoteLabels() {
+    for (let i = 0; i < 4; i++) {
+        const degree = parseInt(degreeInputs[i].value) || 1;
+        const sharp = sharpChecks[i].checked;
+        const octaveOffset = getOctaveOffset(i);
+        noteLabels[i].textContent = getNoteLabel(degree, sharp, octaveOffset);
+    }
 }
 
 /**
- * Play a piano-like tone at the target frequency for 5 seconds
- * Uses additive synthesis with harmonics and ADSR envelope
+ * Get octave offset for a note index
  */
-function playTone() {
-    // If already playing, stop it
+function getOctaveOffset(index) {
+    if (octUpChecks[index].checked) return 1;
+    if (octDownChecks[index].checked) return -1;
+    return 0;
+}
+
+/**
+ * Get the current settings from UI
+ */
+function getSettings() {
+    const rootFrequency = noteToFrequency(rootNoteSelect.value);
+    const tempo = parseInt(tempoInput.value) || 60;
+    const noteDuration = (60 / tempo) * 1000;
+
+    const notes = [];
+    for (let i = 0; i < 4; i++) {
+        const degree = parseInt(degreeInputs[i].value) || 1;
+        const sharp = sharpChecks[i].checked;
+        const octaveOffset = getOctaveOffset(i);
+        const frequency = scaleDegreeToFrequency(degree, rootFrequency, sharp, octaveOffset);
+        notes.push({ degree, sharp, octaveOffset, frequency });
+    }
+
+    return { rootFrequency, tempo, noteDuration, notes };
+}
+
+/**
+ * Play a single piano-like note
+ */
+function playPianoNote(frequency, duration, startTime, context) {
+    const harmonics = [
+        { ratio: 1, amplitude: 1.0 },
+        { ratio: 2, amplitude: 0.5 },
+        { ratio: 3, amplitude: 0.35 },
+        { ratio: 4, amplitude: 0.25 },
+        { ratio: 5, amplitude: 0.15 },
+        { ratio: 6, amplitude: 0.1 },
+        { ratio: 7, amplitude: 0.05 },
+        { ratio: 8, amplitude: 0.03 },
+    ];
+
+    const masterGain = context.createGain();
+    masterGain.connect(context.destination);
+
+    const durationSec = duration / 1000;
+    const attackTime = 0.005;
+    const decayTime = 0.2;
+    const sustainLevel = 0.3;
+
+    harmonics.forEach((harmonic, index) => {
+        const freq = frequency * harmonic.ratio;
+        if (freq > context.sampleRate / 2) return;
+
+        const osc = context.createOscillator();
+        const gainNode = context.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        if (index > 0) {
+            osc.detune.setValueAtTime((Math.random() - 0.5) * 4, startTime);
+        }
+
+        const peakAmp = harmonic.amplitude * 0.12;
+        const sustainAmp = peakAmp * sustainLevel;
+        const harmonicDecayMultiplier = 1 + (index * 0.3);
+
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(peakAmp, startTime + attackTime);
+        gainNode.gain.exponentialRampToValueAtTime(
+            Math.max(sustainAmp / harmonicDecayMultiplier, 0.001),
+            startTime + attackTime + decayTime
+        );
+        gainNode.gain.exponentialRampToValueAtTime(0.001, startTime + durationSec);
+
+        osc.connect(gainNode);
+        gainNode.connect(masterGain);
+
+        osc.start(startTime);
+        osc.stop(startTime + durationSec + 0.1);
+    });
+}
+
+/**
+ * Play the 4-note melody
+ */
+function playMelody() {
     if (isPlayingTone) {
-        stopTone();
+        stopMelody();
         return;
     }
 
-    // Create audio context
+    const settings = getSettings();
     toneContext = new (window.AudioContext || window.webkitAudioContext)();
-    toneOscillators = [];
 
-    // Piano harmonic structure - relative amplitudes for each harmonic
-    // Grand piano has strong fundamental with decreasing harmonics
-    const harmonics = [
-        { ratio: 1, amplitude: 1.0 },      // Fundamental
-        { ratio: 2, amplitude: 0.5 },      // 2nd harmonic
-        { ratio: 3, amplitude: 0.35 },     // 3rd harmonic
-        { ratio: 4, amplitude: 0.25 },     // 4th harmonic
-        { ratio: 5, amplitude: 0.15 },     // 5th harmonic
-        { ratio: 6, amplitude: 0.1 },      // 6th harmonic
-        { ratio: 7, amplitude: 0.05 },     // 7th harmonic
-        { ratio: 8, amplitude: 0.03 },     // 8th harmonic
-    ];
-
-    // Master gain for overall volume
-    toneGain = toneContext.createGain();
-    toneGain.connect(toneContext.destination);
+    isPlayingTone = true;
+    playButton.textContent = 'Stop';
+    startButton.disabled = true;
+    disableControls(true);
 
     const now = toneContext.currentTime;
-    const duration = TONE_DURATION / 1000;
+    const noteDurationSec = settings.noteDuration / 1000;
 
-    // Piano ADSR envelope parameters
-    const attackTime = 0.005;   // Very fast attack (piano hammer strike)
-    const decayTime = 0.3;      // Quick initial decay
-    const sustainLevel = 0.4;   // Sustain level relative to peak
-    const releaseTime = 0.5;    // Release time
-
-    // Create oscillators for each harmonic
-    harmonics.forEach((harmonic, index) => {
-        const freq = targetFrequency * harmonic.ratio;
-
-        // Skip harmonics above Nyquist frequency
-        if (freq > toneContext.sampleRate / 2) return;
-
-        const osc = toneContext.createOscillator();
-        const gainNode = toneContext.createGain();
-
-        // Use sine waves for clean harmonics
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(freq, now);
-
-        // Slight detuning for richness (piano strings are slightly out of tune)
-        if (index > 0) {
-            osc.detune.setValueAtTime((Math.random() - 0.5) * 4, now);
-        }
-
-        // Calculate amplitude with ADSR envelope
-        const peakAmp = harmonic.amplitude * 0.15; // Scale down overall volume
-        const sustainAmp = peakAmp * sustainLevel;
-
-        // Higher harmonics decay faster (mimics real piano)
-        const harmonicDecayMultiplier = 1 + (index * 0.3);
-
-        gainNode.gain.setValueAtTime(0, now);
-        // Attack
-        gainNode.gain.linearRampToValueAtTime(peakAmp, now + attackTime);
-        // Decay to sustain
-        gainNode.gain.exponentialRampToValueAtTime(
-            Math.max(sustainAmp / harmonicDecayMultiplier, 0.001),
-            now + attackTime + decayTime
-        );
-        // Gradual decay during sustain (piano sound naturally decays)
-        gainNode.gain.exponentialRampToValueAtTime(
-            Math.max(sustainAmp / harmonicDecayMultiplier / 3, 0.001),
-            now + duration - releaseTime
-        );
-        // Release
-        gainNode.gain.exponentialRampToValueAtTime(0.001, now + duration);
-
-        osc.connect(gainNode);
-        gainNode.connect(toneGain);
-
-        osc.start(now);
-        osc.stop(now + duration + 0.1);
-
-        toneOscillators.push({ osc, gainNode });
+    // Play each note in sequence
+    settings.notes.forEach((note, i) => {
+        const startTime = now + (i * noteDurationSec);
+        playPianoNote(note.frequency, settings.noteDuration * 0.9, startTime, toneContext);
     });
 
-    // Update UI
-    isPlayingTone = true;
-    playButton.textContent = 'Stop Tone';
-    noteSelect.disabled = true;
+    const totalDuration = settings.noteDuration * 4;
 
-    // Stop after duration
+    statusText.textContent = 'Playing melody...';
+
     toneTimeout = setTimeout(() => {
-        stopTone();
-    }, TONE_DURATION);
+        stopMelody();
+        statusText.textContent = 'Melody complete. Click "Start Singing" to record your attempt.';
+    }, totalDuration);
 }
 
 /**
- * Stop playing the tone
+ * Stop melody playback
  */
-function stopTone() {
-    // Clear the timeout
+function stopMelody() {
     if (toneTimeout) {
         clearTimeout(toneTimeout);
         toneTimeout = null;
     }
 
-    // Stop all oscillators
-    toneOscillators.forEach(({ osc, gainNode }) => {
-        try {
-            gainNode.gain.cancelScheduledValues(0);
-            gainNode.gain.setValueAtTime(gainNode.gain.value, toneContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.001, toneContext.currentTime + 0.05);
-            osc.stop(toneContext.currentTime + 0.06);
-        } catch (e) {
-            // Oscillator may have already stopped
-        }
-    });
-    toneOscillators = [];
-
-    // Close audio context
     if (toneContext) {
-        setTimeout(() => {
-            toneContext.close();
-            toneContext = null;
-        }, 100);
+        toneContext.close();
+        toneContext = null;
     }
 
-    toneGain = null;
     isPlayingTone = false;
-    playButton.textContent = 'Play Tone';
-    if (!isListening) {
-        noteSelect.disabled = false;
+    playButton.textContent = 'Play Melody';
+    startButton.disabled = false;
+    disableControls(false);
+}
+
+/**
+ * Disable/enable controls
+ */
+function disableControls(disabled) {
+    rootNoteSelect.disabled = disabled;
+    tempoInput.disabled = disabled;
+    for (let i = 0; i < 4; i++) {
+        degreeInputs[i].disabled = disabled;
+        sharpChecks[i].disabled = disabled;
+        octUpChecks[i].disabled = disabled;
+        octDownChecks[i].disabled = disabled;
     }
 }
 
 /**
- * Start listening to microphone
+ * Start recording the user's singing
  */
-async function startListening() {
+async function startRecording() {
     try {
+        const settings = getSettings();
+
         statusText.textContent = 'Requesting microphone access...';
 
-        // Create audio context
         audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
-        // Get microphone stream
         const stream = await navigator.mediaDevices.getUserMedia({
             audio: {
                 echoCancellation: false,
@@ -245,34 +325,92 @@ async function startListening() {
             }
         });
 
-        // Create analyser node
         analyser = audioContext.createAnalyser();
         analyser.fftSize = BUFFER_SIZE;
 
-        // Connect microphone to analyser
         microphone = audioContext.createMediaStreamSource(stream);
         microphone.connect(analyser);
 
-        isListening = true;
+        // Update UI
         startButton.disabled = true;
         stopButton.disabled = false;
-        noteSelect.disabled = true;
-        statusText.textContent = 'Listening... Sing into your microphone!';
+        playButton.disabled = true;
+        disableControls(true);
 
-        // Start the analysis loop
+        // Reset visualization
+        resetVisualization();
+
+        // Start countdown at metronome speed
+        await countdown(settings.noteDuration);
+
+        // After countdown, start recording
+        isListening = true;
+        currentNoteIndex = 0;
+        notePitchSamples = [[], [], [], []];
+        noteStartTime = Date.now();
+
+        statusText.textContent = 'Sing now! Note 1...';
+        noteColumns[0].classList.add('active');
+
+        // Schedule note transitions
+        const totalDuration = settings.noteDuration * 4;
+
+        for (let i = 1; i < 4; i++) {
+            setTimeout(() => {
+                if (isListening) {
+                    currentNoteIndex = i;
+                    statusText.textContent = `Sing now! Note ${i + 1}...`;
+                    noteColumns.forEach(col => col.classList.remove('active'));
+                    noteColumns[i].classList.add('active');
+                }
+            }, settings.noteDuration * i);
+        }
+
+        // Schedule end of recording
+        recordingTimeout = setTimeout(() => {
+            finishRecording();
+        }, totalDuration);
+
+        // Start analyzing
         analyze();
 
     } catch (error) {
         console.error('Error accessing microphone:', error);
-        statusText.textContent = 'Error: Could not access microphone. Please allow microphone access.';
+        statusText.textContent = 'Error: Could not access microphone.';
     }
 }
 
 /**
- * Stop listening to microphone
+ * Countdown 3-2-1 at metronome speed
  */
-function stopListening() {
+function countdown(beatDuration) {
+    return new Promise((resolve) => {
+        statusText.textContent = '3...';
+
+        setTimeout(() => {
+            statusText.textContent = '2...';
+        }, beatDuration);
+
+        setTimeout(() => {
+            statusText.textContent = '1...';
+        }, beatDuration * 2);
+
+        setTimeout(() => {
+            resolve();
+        }, beatDuration * 3);
+    });
+}
+
+/**
+ * Stop recording
+ */
+function stopRecording() {
     isListening = false;
+
+    if (recordingTimeout) {
+        clearTimeout(recordingTimeout);
+        recordingTimeout = null;
+    }
 
     if (animationId) {
         cancelAnimationFrame(animationId);
@@ -291,82 +429,132 @@ function stopListening() {
 
     startButton.disabled = false;
     stopButton.disabled = true;
-    noteSelect.disabled = false;
-    statusText.textContent = 'Stopped. Select a note and click Start.';
+    playButton.disabled = false;
+    disableControls(false);
 
-    // Reset displays
-    detectedDisplay.textContent = 'Detected: --';
-    centsDisplay.textContent = '-- cents';
-    resetPitchLine();
+    noteColumns.forEach(col => col.classList.remove('active'));
+
+    statusText.textContent = 'Stopped. Click Play Melody to hear the notes again.';
 }
 
 /**
- * Reset pitch line to center with neutral color
+ * Finish recording and show results
  */
-function resetPitchLine() {
-    pitchLine.style.top = '50%';
-    pitchLine.style.backgroundColor = '#ccc';
+function finishRecording() {
+    isListening = false;
+
+    if (animationId) {
+        cancelAnimationFrame(animationId);
+        animationId = null;
+    }
+
+    if (microphone) {
+        microphone.disconnect();
+        microphone = null;
+    }
+
+    if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+    }
+
+    // Calculate and display results for each note
+    const settings = getSettings();
+    displayResults(settings);
+
+    startButton.disabled = false;
+    stopButton.disabled = true;
+    playButton.disabled = false;
+    disableControls(false);
+
+    noteColumns.forEach(col => col.classList.remove('active'));
 }
 
 /**
- * Main analysis loop
+ * Calculate and display results
+ */
+function displayResults(settings) {
+    let allGood = true;
+
+    for (let i = 0; i < 4; i++) {
+        const samples = notePitchSamples[i];
+        const targetFreq = settings.notes[i].frequency;
+
+        if (samples.length === 0) {
+            pitchLines[i].style.top = '50%';
+            pitchLines[i].style.backgroundColor = '#ccc';
+            allGood = false;
+            continue;
+        }
+
+        const avgCents = samples.reduce((sum, freq) => {
+            return sum + centsDifference(freq, targetFreq);
+        }, 0) / samples.length;
+
+        updatePitchLine(i, avgCents);
+
+        if (Math.abs(avgCents) > 10) {
+            allGood = false;
+        }
+    }
+
+    if (allGood) {
+        statusText.textContent = 'Great job! All notes were on pitch!';
+    } else {
+        statusText.textContent = 'Recording complete. Check your pitch accuracy above.';
+    }
+}
+
+/**
+ * Reset visualization
+ */
+function resetVisualization() {
+    pitchLines.forEach(line => {
+        line.style.top = '50%';
+        line.style.backgroundColor = '#ccc';
+    });
+    noteColumns.forEach(col => col.classList.remove('active', 'completed'));
+}
+
+/**
+ * Main analysis loop during recording
  */
 function analyze() {
     if (!isListening) return;
 
+    const settings = getSettings();
     const buffer = new Float32Array(BUFFER_SIZE);
     analyser.getFloatTimeDomainData(buffer);
 
     const detectedFreq = detectPitch(buffer, audioContext.sampleRate);
 
-    if (detectedFreq !== null) {
-        // Get note info
-        const noteInfo = frequencyToNote(detectedFreq);
-        detectedDisplay.textContent = `Detected: ${noteInfo.name} (${detectedFreq.toFixed(1)} Hz)`;
+    if (detectedFreq !== null && currentNoteIndex < 4) {
+        notePitchSamples[currentNoteIndex].push(detectedFreq);
 
-        // Calculate cents difference
-        const cents = centsDifference(detectedFreq, targetFrequency);
-        centsDisplay.textContent = `${cents >= 0 ? '+' : ''}${cents.toFixed(0)} cents`;
-
-        // Update the pitch line
-        updatePitchLine(cents);
-    } else {
-        detectedDisplay.textContent = 'Detected: (no pitch)';
-        centsDisplay.textContent = '-- cents';
-        resetPitchLine();
+        const targetFreq = settings.notes[currentNoteIndex].frequency;
+        const cents = centsDifference(detectedFreq, targetFreq);
+        updatePitchLine(currentNoteIndex, cents);
     }
 
     animationId = requestAnimationFrame(analyze);
 }
 
 /**
- * Update the horizontal pitch line position and color
- * - On pitch (within threshold): middle, green
- * - Too high: moves up, red
- * - Too low: moves down, blue
+ * Update pitch line position and color
  */
-function updatePitchLine(cents) {
-    const threshold = 10; // Within 10 cents is considered "on pitch"
-
-    // Clamp cents to a reasonable range for visualization (-100 to +100)
+function updatePitchLine(index, cents) {
+    const threshold = 10;
     const clampedCents = Math.max(-100, Math.min(100, cents));
-
-    // Calculate vertical position
-    // 50% = middle, higher pitch = lower percentage (moves up), lower pitch = higher percentage (moves down)
-    // Map -100 cents to 80%, 0 cents to 50%, +100 cents to 20%
     const percentage = 50 - (clampedCents * 0.3);
-    pitchLine.style.top = `${percentage}%`;
 
-    // Set color based on pitch accuracy
+    pitchLines[index].style.top = `${percentage}%`;
+
     if (Math.abs(cents) <= threshold) {
-        // On pitch - green
-        pitchLine.style.backgroundColor = '#22c55e';
+        pitchLines[index].style.backgroundColor = '#22c55e';
     } else if (cents > 0) {
-        // Too high - red
-        pitchLine.style.backgroundColor = '#ef4444';
+        pitchLines[index].style.backgroundColor = '#ef4444';
     } else {
-        // Too low - blue
-        pitchLine.style.backgroundColor = '#3b82f6';
+        pitchLines[index].style.backgroundColor = '#3b82f6';
     }
 }
 

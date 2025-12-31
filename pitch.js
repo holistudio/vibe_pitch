@@ -7,6 +7,10 @@ const A4_MIDI = 69;
 // Note names for display
 const NOTE_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
+// Major scale intervals in semitones from root
+// Scale degree: 1=0, 2=2, 3=4, 4=5, 5=7, 6=9, 7=11, 8=12
+const MAJOR_SCALE_SEMITONES = [0, 2, 4, 5, 7, 9, 11, 12];
+
 /**
  * Convert a piano key name (e.g., 'C4', 'A#3') to frequency in Hz
  */
@@ -53,6 +57,46 @@ function frequencyToNote(frequency) {
 function centsDifference(detected, target) {
     if (detected <= 0 || target <= 0) return 0;
     return 1200 * Math.log2(detected / target);
+}
+
+/**
+ * Convert a scale degree (1-7) to frequency given a root frequency
+ * Uses major scale intervals
+ * @param {number} degree - Scale degree 1-7
+ * @param {number} rootFrequency - Frequency of the root note
+ * @param {boolean} sharp - Add a sharp (raise by 1 semitone)
+ * @param {number} octaveOffset - Octave offset (-1, 0, or +1)
+ */
+function scaleDegreeToFrequency(degree, rootFrequency, sharp = false, octaveOffset = 0) {
+    // Clamp degree to 1-7
+    const clampedDegree = Math.max(1, Math.min(7, degree));
+    let semitones = MAJOR_SCALE_SEMITONES[clampedDegree - 1];
+
+    // Add sharp if specified
+    if (sharp) {
+        semitones += 1;
+    }
+
+    // Add octave offset (12 semitones per octave)
+    semitones += octaveOffset * 12;
+
+    return rootFrequency * Math.pow(2, semitones / 12);
+}
+
+/**
+ * Get display label for a note (e.g., "3#", "5+8va")
+ */
+function getNoteLabel(degree, sharp, octaveOffset) {
+    let label = String(degree);
+    if (sharp) {
+        label += '#';
+    }
+    if (octaveOffset > 0) {
+        label += ' +8va';
+    } else if (octaveOffset < 0) {
+        label += ' -8va';
+    }
+    return label;
 }
 
 /**

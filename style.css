@@ -14,33 +14,150 @@ body {
 
 /* Controls panel at the top */
 .controls {
-    padding: 20px;
+    padding: 15px 20px;
     background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
+}
+
+.controls-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 15px;
+    gap: 20px;
     align-items: center;
     justify-content: center;
+    margin-bottom: 15px;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    align-items: center;
+}
+
+.control-group.buttons {
+    flex-direction: row;
+    gap: 10px;
 }
 
 .controls label {
     font-weight: 500;
     color: #333;
+    font-size: 13px;
 }
 
-.controls select {
+.controls select,
+.controls input[type="number"] {
     padding: 8px 12px;
     font-size: 16px;
     border: 1px solid #ccc;
     border-radius: 4px;
     background-color: white;
     cursor: pointer;
+    width: 100px;
+    text-align: center;
 }
 
-.controls button {
-    padding: 10px 20px;
+/* Note cards row */
+.notes-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.note-card {
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 90px;
+}
+
+.note-degree {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.degree-input {
+    width: 45px !important;
+    padding: 6px !important;
+    font-size: 18px !important;
+    font-weight: bold;
+    text-align: center;
+}
+
+.sharp-label {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    cursor: pointer;
     font-size: 16px;
+    font-weight: bold;
+    color: #666;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.sharp-label:hover {
+    background-color: #f0f0f0;
+}
+
+.sharp-check {
+    display: none;
+}
+
+.sharp-check:checked + span {
+    color: #3b82f6;
+}
+
+.sharp-label:has(.sharp-check:checked) {
+    background-color: #e0ecff;
+}
+
+.octave-options {
+    display: flex;
+    gap: 8px;
+}
+
+.octave-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    font-size: 11px;
+    color: #888;
+    padding: 3px 6px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.octave-label:hover {
+    background-color: #f0f0f0;
+}
+
+.octave-check {
+    display: none;
+}
+
+.octave-check:checked + span {
+    color: #3b82f6;
+    font-weight: 500;
+}
+
+.octave-label:has(.octave-check:checked) {
+    background-color: #e0ecff;
+}
+
+/* Buttons */
+.controls button {
+    padding: 10px 16px;
+    font-size: 14px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -81,12 +198,10 @@ body {
 
 /* Info display */
 .info {
-    padding: 15px;
+    padding: 12px;
     background-color: #f8f9fa;
     border-bottom: 1px solid #e9ecef;
     display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
     justify-content: center;
     font-size: 14px;
     color: #555;
@@ -110,29 +225,8 @@ body {
     position: relative;
     background-color: white;
     min-height: 400px;
-}
-
-/* Center reference line (shows where "on pitch" is) */
-.center-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 1px;
-    background-color: #e0e0e0;
-    transform: translateY(-50%);
-}
-
-/* The moving pitch indicator line */
-#pitch-line {
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 8px;
-    background-color: #ccc;
-    transform: translateY(-50%);
-    transition: top 0.05s ease-out, background-color 0.1s ease;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Labels for high/low */
@@ -143,6 +237,7 @@ body {
     transform: translateX(-50%);
     color: #999;
     font-size: 14px;
+    z-index: 10;
 }
 
 .label-low {
@@ -152,4 +247,70 @@ body {
     transform: translateX(-50%);
     color: #999;
     font-size: 14px;
+    z-index: 10;
+}
+
+/* Container for 4 note columns */
+.note-columns {
+    flex: 1;
+    display: flex;
+    flex-direction: row;
+}
+
+/* Individual note column */
+.note-column {
+    flex: 1;
+    position: relative;
+    border-right: 1px solid #e0e0e0;
+}
+
+.note-column:last-child {
+    border-right: none;
+}
+
+/* Note label at top of each column */
+.note-label {
+    position: absolute;
+    top: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+    z-index: 5;
+    white-space: nowrap;
+}
+
+/* Center reference line in each column */
+.note-column .center-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 50%;
+    height: 1px;
+    background-color: #e0e0e0;
+    transform: translateY(-50%);
+}
+
+/* Pitch indicator line in each column */
+.pitch-line {
+    position: absolute;
+    left: 10%;
+    right: 10%;
+    top: 50%;
+    height: 8px;
+    background-color: #ccc;
+    transform: translateY(-50%);
+    transition: top 0.1s ease-out, background-color 0.1s ease;
+    border-radius: 4px;
+}
+
+/* Active column highlight */
+.note-column.active {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Completed column styling */
+.note-column.completed .pitch-line {
+    opacity: 0.8;
 }
