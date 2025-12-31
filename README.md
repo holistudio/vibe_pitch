@@ -6,6 +6,8 @@ Ever wondered if you're actually hitting that note, or just *think* you are? Thi
 
 Pick a note, sing into your mic, and watch the line tell you the truth!
 
+<img src="assets/screenshot.png">
+
 ## Features ✨
 
 - **Wide vocal range** — Select any note from C2 to C6
