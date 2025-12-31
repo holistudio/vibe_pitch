@@ -1,27 +1,30 @@
-# vibe_pitch
+# vibe_pitch 🎤
 
 Vibecoding a singing pitch webapp
 
-A simple web app that helps you practice singing specific musical notes. Select a target pitch, sing into your microphone, and get real-time visual feedback showing whether you're on pitch, too high, or too low.
+Ever wondered if you're actually hitting that note, or just *think* you are? This web app gives you real-time visual feedback as you sing, so you can finally settle the debate with yourself.
 
-## Features
+Pick a note, sing into your mic, and watch the line tell you the truth!
 
-- Select any note from C2 to C6 (covers most vocal ranges)
-- Real-time pitch detection using your microphone
-- Visual feedback with a horizontal line:
-  - **Green (middle)** = on pitch
-  - **Red (moves up)** = too high
-  - **Blue (moves down)** = too low
+## Features ✨
+
+- **Wide vocal range** — Select any note from C2 to C6
+- **Real-time pitch detection** — Instantly see how you're doing
+- **Simple visual feedback** — A horizontal line shows your accuracy:
+  - 🟢 **Green (center)** = Nailed it!
+  - 🔴 **Red (moves up)** = Too high, bring it down
+  - 🔵 **Blue (moves down)** = Too low, reach for it!
+- **Play the target note** — Hear what you're aiming for with piano-like tones
 
 ## Requirements
 
 - A modern web browser (Chrome, Firefox, Edge, or Safari)
-- A microphone
+- A microphone 🎙️
 - A local web server (see instructions below)
 
-**Note:** Due to browser security restrictions, the microphone will only work when the page is served from `localhost` or `https://`. Opening the HTML file directly (`file://`) will not work.
+**Note:** Due to browser security restrictions, the microphone only works when served from `localhost` or `https://`. Opening the HTML file directly won't work.
 
-## Setup Instructions
+## Setup Instructions 🚀
 
 ### Step 1: Clone the Repository
 
@@ -34,11 +37,11 @@ cd vibe_pitch
 
 ### Step 2: Start a Local Web Server
 
-Choose ONE of the following options based on what you have installed or prefer to install:
+Pick whichever option works for you:
 
 ---
 
-#### Option A: Using Python (Recommended for Mac/Linux)
+#### Option A: Python (Recommended for Mac/Linux)
 
 **Mac/Linux:** Python 3 is usually pre-installed.
 
@@ -46,7 +49,7 @@ Choose ONE of the following options based on what you have installed or prefer t
 python3 -m http.server 8000
 ```
 
-**Windows:** Python is not pre-installed. First install it from [python.org](https://www.python.org/downloads/), then:
+**Windows:** Install Python from [python.org](https://www.python.org/downloads/) first, then:
 
 ```cmd
 python -m http.server 8000
@@ -56,11 +59,9 @@ Then open: http://localhost:8000
 
 ---
 
-#### Option B: Using Node.js/npm
+#### Option B: Node.js/npm
 
-First install Node.js from [nodejs.org](https://nodejs.org/) if you don't have it.
-
-**All platforms:**
+Install Node.js from [nodejs.org](https://nodejs.org/) if needed.
 
 ```bash
 npx serve
@@ -70,69 +71,46 @@ Then open the URL shown (usually http://localhost:3000)
 
 ---
 
-#### Option C: Using PHP (if installed)
-
-**Mac/Linux:**
-
-```bash
-php -S localhost:8000
-```
-
-**Windows:**
-
-```cmd
-php -S localhost:8000
-```
-
-Then open: http://localhost:8000
-
----
-
-#### Option D: Using VS Code Live Server Extension
+#### Option C: VS Code Live Server
 
 1. Install [Visual Studio Code](https://code.visualstudio.com/)
 2. Install the "Live Server" extension by Ritwick Dey
 3. Open the `vibe_pitch` folder in VS Code
-4. Right-click on `index.html` and select "Open with Live Server"
-
----
-
-#### Option E: Using browser extensions
-
-**Chrome:**
-1. Install "Web Server for Chrome" from the Chrome Web Store
-2. Launch the app, select the `vibe_pitch` folder
-3. Click the server URL to open
+4. Right-click `index.html` → "Open with Live Server"
 
 ---
 
 ### Step 3: Allow Microphone Access
 
-When you click "Start" in the app, your browser will ask for permission to use your microphone. Click "Allow" to enable pitch detection.
+When you click "Start", your browser will ask for mic permission. Click "Allow" and you're good to go!
 
-## Usage
+## How to Use 🎵
 
-1. Select a target note from the dropdown (default is A3)
-2. Click "Start"
-3. Allow microphone access when prompted
-4. Sing the note and watch the line move:
-   - Aim to keep the line green and centered
-   - If the line goes up and turns red, you're singing too high
-   - If the line goes down and turns blue, you're singing too low
-5. Click "Stop" when done
+1. **Pick your note** from the dropdown
+2. **Click "Play Tone"** to hear the target pitch (optional but helpful!)
+3. **Click "Start"** and allow microphone access
+4. **Sing!** Watch the line:
+   - Keep it green and centered = you're on pitch
+   - Line going up + red = you're sharp, come down a bit
+   - Line going down + blue = you're flat, push it higher
+5. **Click "Stop"** when you're done
 
-## Troubleshooting
+## Troubleshooting 🔧
 
-**Microphone not working:**
-- Make sure you're accessing via `localhost` (not `file://`)
-- Check that your browser has microphone permissions enabled
+**Microphone not working?**
+- Make sure you're on `localhost` (not `file://`)
+- Check browser permissions for microphone access
 - Try a different browser
 
-**No pitch detected:**
-- Sing louder or move closer to the microphone
-- Make sure your microphone is not muted
-- Check your system audio input settings
+**No pitch detected?**
+- Sing louder or get closer to the mic
+- Check that your mic isn't muted
+- Verify your system audio input settings
 
-**Page not loading:**
-- Ensure the local server is running
-- Check that you're using the correct port number in the URL
+**Page won't load?**
+- Make sure your local server is running
+- Double-check the port number in your URL
+
+---
+
+Happy singing! 🎶
